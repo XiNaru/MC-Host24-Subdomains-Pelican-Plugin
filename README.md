@@ -1,4 +1,4 @@
-# MC-HOST24 Subdomains
+# MC-HOST24 Subdomains Pelican Plugin
 
 Pelican plugin for managing Minecraft subdomains using the MC-HOST24 API.
 
