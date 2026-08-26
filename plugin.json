@@ -3,7 +3,7 @@
     "name": "MC-HOST24 Subdomains",
     "author": "XiNaaru",
     "version": "1.0.0",
-    "description": "Creates and manages Minecraft subdomains for servers using the MC-HOST24 API.",
+    "description": "Creates and manages Minecraft subdomains for Pelican servers using the MC-HOST24 API.",
     "category": "plugin",
     "namespace": "XiNaaru\\McHost24Subdomains",
     "class": "McHost24SubdomainsPlugin",
@@ -12,9 +12,5 @@
         "server"
     ],
     "panel_version": null,
-    "composer_packages": null,
-    "meta": {
-        "status": "enabled",
-        "status_message": null
-    }
+    "composer_packages": null
 }
