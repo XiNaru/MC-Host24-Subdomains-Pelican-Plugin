@@ -1,0 +1,20 @@
+{
+    "id": "mchost24-subdomains",
+    "name": "MC-HOST24 Subdomains",
+    "author": "XiNaaru",
+    "version": "1.0.0",
+    "description": "Creates and manages Minecraft subdomains for servers using the MC-HOST24 API.",
+    "category": "plugin",
+    "namespace": "XiNaaru\\McHost24Subdomains",
+    "class": "McHost24SubdomainsPlugin",
+    "panels": [
+        "admin",
+        "server"
+    ],
+    "panel_version": null,
+    "composer_packages": null,
+    "meta": {
+        "status": "enabled",
+        "status_message": null
+    }
+}
