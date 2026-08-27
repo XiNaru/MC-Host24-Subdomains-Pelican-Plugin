@@ -10,9 +10,3 @@
     "panels": [
         "admin",
         "server"
-    ],
-    "meta": {
-        "status": "enabled",
-        "status_message": null
-    }
-}
