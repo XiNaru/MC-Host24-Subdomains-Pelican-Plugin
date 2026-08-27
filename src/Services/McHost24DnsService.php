@@ -17,7 +17,9 @@ class McHost24DnsService
         $token = trim((string) config('mchost24-subdomains.api_token'));
 
         if ($token === '') {
-            throw new RuntimeException('MC-HOST24 API-Token ist nicht konfiguriert.');
+            throw new RuntimeException(
+                __('mchost24-subdomains::strings.api_token_not_configured')
+            );
         }
 
         return $token;
@@ -28,7 +30,9 @@ class McHost24DnsService
         $domainId = (int) config('mchost24-subdomains.domain_id');
 
         if ($domainId <= 0) {
-            throw new RuntimeException('Keine MC-HOST24-Domain wurde ausgewählt.');
+            throw new RuntimeException(
+                __('mchost24-subdomains::strings.domain_not_selected')
+            );
         }
 
         return $domainId;
@@ -39,7 +43,9 @@ class McHost24DnsService
         $domain = trim((string) config('mchost24-subdomains.domain'));
 
         if ($domain === '') {
-            throw new RuntimeException('Keine MC-HOST24-Domain wurde konfiguriert.');
+            throw new RuntimeException(
+                __('mchost24-subdomains::strings.domain_not_configured')
+            );
         }
 
         return rtrim($domain, '.');
@@ -52,28 +58,38 @@ class McHost24DnsService
         $this->validateSubdomain($subdomain);
 
         if (McHost24Subdomain::query()->where('subdomain', $subdomain)->exists()) {
-            throw new RuntimeException('Diese Subdomain wird bereits verwendet.');
+            throw new RuntimeException(
+                __('mchost24-subdomains::strings.subdomain_already_used')
+            );
         }
 
         if (McHost24Subdomain::query()->where('server_id', $server->id)->exists()) {
-            throw new RuntimeException('Für diesen Server existiert bereits eine Subdomain.');
+            throw new RuntimeException(
+                __('mchost24-subdomains::strings.already_exists')
+            );
         }
 
         $allocation = $server->allocation;
 
         if ($allocation === null) {
-            throw new RuntimeException('Für diesen Server wurde keine Allocation gefunden.');
+            throw new RuntimeException(
+                __('mchost24-subdomains::strings.allocation_not_found')
+            );
         }
 
         $ip = trim((string) $allocation->ip);
         $port = (int) $allocation->port;
 
         if ($ip === '') {
-            throw new RuntimeException('Die Server-IP konnte nicht ermittelt werden.');
+            throw new RuntimeException(
+                __('mchost24-subdomains::strings.server_ip_not_found')
+            );
         }
 
         if ($port <= 0 || $port > 65535) {
-            throw new RuntimeException('Der Server-Port ist ungültig.');
+            throw new RuntimeException(
+                __('mchost24-subdomains::strings.invalid_server_port')
+            );
         }
 
         $domain = $this->getDomain();
@@ -161,13 +177,16 @@ class McHost24DnsService
                 'target' => $ip,
             ]);
 
-        $this->ensureSuccessful($response, 'A/AAAA-Record konnte nicht erstellt werden.');
+        $this->ensureSuccessful(
+            $response,
+            __('mchost24-subdomains::strings.address_record_failed')
+        );
 
         $data = $response->json('data');
 
         if (!is_array($data) || !isset($data['id'])) {
             throw new RuntimeException(
-                'MC-HOST24 hat keine gültige Record-ID für den A/AAAA-Record zurückgegeben.'
+                __('mchost24-subdomains::strings.address_record_id_missing')
             );
         }
 
@@ -187,13 +206,16 @@ class McHost24DnsService
                 'target' => '10 0 ' . $port . ' ' . rtrim($targetHost, '.') . '.',
             ]);
 
-        $this->ensureSuccessful($response, 'SRV-Record konnte nicht erstellt werden.');
+        $this->ensureSuccessful(
+            $response,
+            __('mchost24-subdomains::strings.srv_record_failed')
+        );
 
         $data = $response->json('data');
 
         if (!is_array($data) || !isset($data['id'])) {
             throw new RuntimeException(
-                'MC-HOST24 hat keine gültige Record-ID für den SRV-Record zurückgegeben.'
+                __('mchost24-subdomains::strings.srv_record_id_missing')
             );
         }
 
@@ -213,7 +235,7 @@ class McHost24DnsService
 
         $this->ensureSuccessful(
             $response,
-            'DNS-Record konnte nicht gelöscht werden.'
+            __('mchost24-subdomains::strings.dns_record_delete_failed')
         );
     }
 
@@ -248,18 +270,20 @@ class McHost24DnsService
     private function validateSubdomain(string $subdomain): void
     {
         if ($subdomain === '') {
-            throw new RuntimeException('Bitte gib eine Subdomain ein.');
+            throw new RuntimeException(
+                __('mchost24-subdomains::strings.subdomain_required')
+            );
         }
 
         if (strlen($subdomain) > 63) {
             throw new RuntimeException(
-                'Die Subdomain darf maximal 63 Zeichen lang sein.'
+                __('mchost24-subdomains::strings.subdomain_too_long')
             );
         }
 
         if (!preg_match('/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/', $subdomain)) {
             throw new RuntimeException(
-                'Die Subdomain darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten und darf nicht mit einem Bindestrich beginnen oder enden.'
+                __('mchost24-subdomains::strings.subdomain_invalid')
             );
         }
     }

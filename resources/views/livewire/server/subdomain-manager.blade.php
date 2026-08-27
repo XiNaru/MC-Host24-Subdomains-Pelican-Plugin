@@ -1,30 +1,4 @@
 @php
-    $isGerman = app()->getLocale() === 'de';
-
-    $text = [
-        'title' => $isGerman ? 'Subdomain' : 'Subdomain',
-        'description' => $isGerman
-            ? 'Erstelle eine eigene Minecraft-Adresse für diesen Server.'
-            : 'Create a custom Minecraft address for this server.',
-        'field' => $isGerman ? 'Subdomain' : 'Subdomain',
-        'helper' => $isGerman
-            ? 'Nur Kleinbuchstaben, Zahlen und Bindestriche.'
-            : 'Only lowercase letters, numbers and hyphens.',
-        'minecraft_address' => $isGerman
-            ? 'Minecraft-Adresse'
-            : 'Minecraft Address',
-        'port' => $isGerman ? 'Port' : 'Port',
-        'create' => $isGerman
-            ? 'Subdomain erstellen'
-            : 'Create subdomain',
-        'delete' => $isGerman
-            ? 'Subdomain löschen'
-            : 'Delete subdomain',
-        'delete_confirmation' => $isGerman
-            ? 'Möchtest du diese Subdomain wirklich löschen?'
-            : 'Do you really want to delete this subdomain?',
-    ];
-
     $record = $this->getCurrentRecord();
 @endphp
 
@@ -49,7 +23,7 @@
                 margin-left: 1rem;
             "
         >
-            {{ $text['title'] }}
+            {{ __('mchost24-subdomains::strings.title') }}
         </legend>
 
         <div
@@ -59,14 +33,14 @@
             "
         >
             <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                {{ $text['description'] }}
+                {{ __('mchost24-subdomains::strings.description') }}
             </p>
 
             @if ($record)
                 <div class="space-y-4">
                     <div>
                         <div class="text-sm font-medium text-gray-950 dark:text-white">
-                            {{ $text['minecraft_address'] }}
+                            {{ __('mchost24-subdomains::strings.minecraft_address') }}
                         </div>
 
                         <div class="mt-2 flex flex-wrap items-center gap-3">
@@ -77,16 +51,16 @@
                             <button
                                 type="button"
                                 wire:click="delete"
-                                wire:confirm="{{ $text['delete_confirmation'] }}"
+                                wire:confirm="{{ __('mchost24-subdomains::strings.delete_confirmation') }}"
                                 class="fi-btn fi-btn-size-md relative inline-grid grid-flow-col items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold outline-none transition duration-75 focus:ring-2"
                             >
-                                {{ $text['delete'] }}
+                                {{ __('mchost24-subdomains::strings.delete') }}
                             </button>
                         </div>
                     </div>
 
                     <div class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ $text['port'] }}: {{ $record->target_port }}
+                        {{ __('mchost24-subdomains::strings.port') }}: {{ $record->target_port }}
                     </div>
                 </div>
             @else
@@ -102,7 +76,7 @@
                                 type="submit"
                                 :disabled="! $this->canManage()"
                             >
-                                {{ $text['create'] }}
+                                {{ __('mchost24-subdomains::strings.create') }}
                             </x-filament::button>
                         </div>
                     </form>

@@ -44,67 +44,12 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
     {
     }
 
-    private function isGerman(): bool
-    {
-        return app()->getLocale() === 'de';
-    }
-
-    private function text(string $key): string
-    {
-        $de = [
-            'api_token' => 'MC-HOST24 API Token',
-            'api_token_help' => 'Trage hier deinen MC-HOST24 API-Token ein.',
-            'api_token_create' => 'API-Token erstellen',
-            'api_token_command' => <<<'TEXT'
-curl -X POST "https://mc-host24.de/api/v1/token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "DEIN_BENUTZERNAME",
-    "password": "DEIN_PASSWORT",
-    "tfa": 123456
-  }'
-TEXT,
-            'tfa_title' => 'Hinweis zu tfa',
-            'tfa_help' => 'Das Feld "tfa" ist optional und wird nur benötigt, wenn für dein MC-HOST24-Konto die Zwei-Faktor-Authentifizierung (2FA) aktiviert ist. In diesem Fall wird der aktuelle 6-stellige 2FA-Code eingetragen.',
-            'minecraft_domain' => 'Minecraft-Domain',
-            'domain_placeholder' => 'Zuerst einen gültigen API-Token eingeben',
-            'domain_help' => 'Die verfügbaren Domains werden automatisch anhand deines MC-HOST24 API-Tokens geladen. Die interne Domain-ID wird automatisch verwendet und muss nicht manuell eingetragen werden.',
-            'subdomain_limit' => 'Subdomains pro Server',
-            'settings_saved' => 'Einstellungen gespeichert',
-        ];
-
-        $en = [
-            'api_token' => 'MC-HOST24 API Token',
-            'api_token_help' => 'Enter your MC-HOST24 API token here.',
-            'api_token_create' => 'Create API token',
-            'api_token_command' => <<<'TEXT'
-curl -X POST "https://mc-host24.de/api/v1/token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "YOUR_USERNAME",
-    "password": "YOUR_PASSWORD",
-    "tfa": 123456
-  }'
-TEXT,
-            'tfa_title' => 'tfa notice',
-            'tfa_help' => 'The "tfa" field is optional and is only required if two-factor authentication (2FA) is enabled for your MC-HOST24 account. In that case, enter the current 6-digit 2FA code.',
-            'minecraft_domain' => 'Minecraft Domain',
-            'domain_placeholder' => 'Enter a valid API token first',
-            'domain_help' => 'Available domains are loaded automatically using your MC-HOST24 API token. The internal domain ID is handled automatically and does not need to be entered manually.',
-            'subdomain_limit' => 'Subdomains per Server',
-            'settings_saved' => 'Settings saved',
-        ];
-
-        return ($this->isGerman() ? $de : $en)[$key];
-    }
-
     public function getSettingsFormData(): array
     {
         return [
             'api_token' => config('mchost24-subdomains.api_token', ''),
             'domain_id' => config('mchost24-subdomains.domain_id', ''),
             'domain' => config('mchost24-subdomains.domain', ''),
-            'subdomain_limit' => config('mchost24-subdomains.subdomain_limit', 1),
         ];
     }
 
@@ -112,24 +57,38 @@ TEXT,
     {
         return [
             TextInput::make('api_token')
-                ->label($this->text('api_token'))
+                ->label(__('mchost24-subdomains::strings.api_token'))
                 ->password()
                 ->revealable()
                 ->live(debounce: 500)
                 ->required()
-                ->helperText($this->text('api_token_help')),
+                ->helperText(
+                    __('mchost24-subdomains::strings.api_token_help')
+                ),
 
             Placeholder::make('api_token_command')
-                ->label($this->text('api_token_create'))
-                ->content($this->text('api_token_command')),
+                ->label(
+                    __('mchost24-subdomains::strings.api_token_create')
+                )
+                ->content(
+                    __('mchost24-subdomains::strings.api_token_command')
+                ),
 
             Placeholder::make('api_token_tfa_help')
-                ->label($this->text('tfa_title'))
-                ->content($this->text('tfa_help')),
+                ->label(
+                    __('mchost24-subdomains::strings.tfa_title')
+                )
+                ->content(
+                    __('mchost24-subdomains::strings.tfa_help')
+                ),
 
             Select::make('domain_id')
-                ->label($this->text('minecraft_domain'))
-                ->placeholder($this->text('domain_placeholder'))
+                ->label(
+                    __('mchost24-subdomains::strings.minecraft_domain')
+                )
+                ->placeholder(
+                    __('mchost24-subdomains::strings.domain_placeholder')
+                )
                 ->options(function (Get $get): array {
                     $token = trim((string) $get('api_token'));
 
@@ -182,15 +141,12 @@ TEXT,
                 ->required(),
 
             Placeholder::make('domain_help')
-                ->label($this->text('minecraft_domain'))
-                ->content($this->text('domain_help')),
-
-            TextInput::make('subdomain_limit')
-                ->label($this->text('subdomain_limit'))
-                ->numeric()
-                ->minValue(0)
-                ->default(1)
-                ->required(),
+                ->label(
+                    __('mchost24-subdomains::strings.minecraft_domain')
+                )
+                ->content(
+                    __('mchost24-subdomains::strings.domain_help')
+                ),
         ];
     }
 
@@ -198,7 +154,6 @@ TEXT,
     {
         $apiToken = trim((string) ($data['api_token'] ?? ''));
         $domainId = (string) ($data['domain_id'] ?? '');
-        $subdomainLimit = (int) ($data['subdomain_limit'] ?? 1);
 
         $domainName = '';
 
@@ -240,11 +195,12 @@ TEXT,
             'MCHOST24_SUBDOMAINS_API_TOKEN' => $apiToken,
             'MCHOST24_SUBDOMAINS_DOMAIN_ID' => $domainId,
             'MCHOST24_SUBDOMAINS_DOMAIN' => $domainName,
-            'MCHOST24_SUBDOMAINS_LIMIT' => $subdomainLimit,
         ]);
 
         Notification::make()
-            ->title($this->text('settings_saved'))
+            ->title(
+                __('mchost24-subdomains::strings.settings_saved')
+            )
             ->success()
             ->send();
     }

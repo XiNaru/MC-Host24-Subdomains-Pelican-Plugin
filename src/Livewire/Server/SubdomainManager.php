@@ -43,16 +43,10 @@ class SubdomainManager extends Component implements HasSchemas
 
     public function form(Schema $schema): Schema
     {
-        $isGerman = app()->getLocale() === 'de';
-
         return $schema
             ->components([
                 TextInput::make('subdomain')
-                    ->label(
-                        $isGerman
-                            ? 'Subdomain'
-                            : 'Subdomain'
-                    )
+                    ->label(__('mchost24-subdomains::strings.field'))
                     ->placeholder('survival')
                     ->suffix(function (): string {
                         return '.' . rtrim(
@@ -64,9 +58,7 @@ class SubdomainManager extends Component implements HasSchemas
                     ->maxLength(63)
                     ->regex('/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/')
                     ->helperText(
-                        $isGerman
-                            ? 'Nur Kleinbuchstaben, Zahlen und Bindestriche.'
-                            : 'Only lowercase letters, numbers and hyphens.'
+                        __('mchost24-subdomains::strings.helper')
                     ),
             ])
             ->statePath('data');
@@ -98,8 +90,6 @@ class SubdomainManager extends Component implements HasSchemas
 
     public function save(): void
     {
-        $isGerman = app()->getLocale() === 'de';
-
         abort_unless($this->canManage(), 403);
 
         if (!$this->server) {
@@ -113,9 +103,7 @@ class SubdomainManager extends Component implements HasSchemas
         ) {
             Notification::make()
                 ->title(
-                    $isGerman
-                        ? 'Für diesen Server existiert bereits eine Subdomain.'
-                        : 'A subdomain already exists for this server.'
+                    __('mchost24-subdomains::strings.already_exists')
                 )
                 ->warning()
                 ->send();
@@ -133,14 +121,10 @@ class SubdomainManager extends Component implements HasSchemas
 
             Notification::make()
                 ->title(
-                    $isGerman
-                        ? 'Subdomain erstellt'
-                        : 'Subdomain created'
+                    __('mchost24-subdomains::strings.created_title')
                 )
                 ->body(
-                    $isGerman
-                        ? 'Die Minecraft-Subdomain wurde erfolgreich bei MC-HOST24 erstellt.'
-                        : 'The Minecraft subdomain was successfully created at MC-HOST24.'
+                    __('mchost24-subdomains::strings.created_body')
                 )
                 ->success()
                 ->send();
@@ -153,9 +137,7 @@ class SubdomainManager extends Component implements HasSchemas
 
             Notification::make()
                 ->title(
-                    $isGerman
-                        ? 'Subdomain konnte nicht erstellt werden'
-                        : 'Subdomain could not be created'
+                    __('mchost24-subdomains::strings.create_failed_title')
                 )
                 ->body($exception->getMessage())
                 ->danger()
@@ -165,8 +147,6 @@ class SubdomainManager extends Component implements HasSchemas
 
     public function delete(): void
     {
-        $isGerman = app()->getLocale() === 'de';
-
         abort_unless($this->canManage(), 403);
 
         $record = $this->getCurrentRecord();
@@ -180,9 +160,7 @@ class SubdomainManager extends Component implements HasSchemas
 
             Notification::make()
                 ->title(
-                    $isGerman
-                        ? 'Subdomain gelöscht'
-                        : 'Subdomain deleted'
+                    __('mchost24-subdomains::strings.deleted_title')
                 )
                 ->success()
                 ->send();
@@ -195,9 +173,7 @@ class SubdomainManager extends Component implements HasSchemas
 
             Notification::make()
                 ->title(
-                    $isGerman
-                        ? 'Subdomain konnte nicht gelöscht werden'
-                        : 'Subdomain could not be deleted'
+                    __('mchost24-subdomains::strings.delete_failed_title')
                 )
                 ->body($exception->getMessage())
                 ->danger()

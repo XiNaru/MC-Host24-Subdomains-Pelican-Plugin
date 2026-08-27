@@ -24,11 +24,6 @@ class McHost24SubdomainsPluginProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadTranslationsFrom(
-            plugin_path('mchost24-subdomains', 'lang'),
-            'mchost24-subdomains'
-        );
-
         Livewire::component(
             'mchost24-subdomains-server-manager',
             SubdomainManager::class

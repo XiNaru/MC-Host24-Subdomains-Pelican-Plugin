@@ -6,12 +6,12 @@ Pelican plugin for managing Minecraft subdomains using the MC-HOST24 API.
 
 * MC-HOST24 API token configuration in the plugin settings
 * Minecraft domain selection
-* Subdomain limit configuration
 * Automatic creation of A/AAAA and SRV DNS records
 * Automatic detection of server IP and port
+* One subdomain per server
 * Subdomain creation and deletion directly from the server panel
-* German and English language support
-* English fallback for all languages except German
+* Multi-language support
+* English fallback for languages without a translation
 * Integration with the default Pelican interface
 
 ## API
@@ -34,6 +34,8 @@ The available Minecraft domains are loaded automatically from the MC-HOST24 API.
 
 After configuration, users can create a Minecraft subdomain directly from the server settings.
 
+Each server can have only one subdomain.
+
 For example:
 
 `survival.example.de`
@@ -42,10 +44,17 @@ The plugin automatically creates the required DNS records and configures the SRV
 
 ## Language
 
-The plugin uses English by default.
+The plugin supports multiple languages.
 
-* German panel language (`de`) → German
-* Any other panel language → English
+The language matching the current Pelican panel language is used when available.
+
+English is used as a fallback when no translation is available for the current panel language.
+
+### Translation Contributions
+
+If your language is not currently supported, you are welcome to send me a translation.
+
+After review, I can officially include the translation in the plugin.
 
 ## License
 
@@ -63,12 +72,12 @@ Pelican Plugin zur Verwaltung von Minecraft-Subdomains über die MC-HOST24 API.
 
 * MC-HOST24 API Token in den Plugin-Einstellungen
 * Auswahl der Minecraft-Domain
-* Konfiguration des Subdomain-Limits
 * Automatische Erstellung von A/AAAA- und SRV-DNS-Einträgen
 * Automatische Erkennung von Server-IP und Port
+* Eine Subdomain pro Server
 * Erstellen und Löschen von Subdomains direkt in den Server-Einstellungen
-* Unterstützung für Deutsch und Englisch
-* Englisch als Fallback für alle Sprachen außer Deutsch
+* Unterstützung mehrerer Sprachen
+* Englisch als Fallback, wenn keine Übersetzung für die aktuelle Sprache vorhanden ist
 * Anpassung an das Standard-Pelican-Interface
 
 ## API
@@ -91,6 +100,8 @@ Die verfügbaren Minecraft-Domains werden automatisch über die MC-HOST24 API ge
 
 Nach der Konfiguration können Benutzer direkt in den Server-Einstellungen eine Minecraft-Subdomain erstellen.
 
+Jeder Server kann nur eine Subdomain besitzen.
+
 Beispiel:
 
 `survival.example.de`
@@ -99,10 +110,17 @@ Das Plugin erstellt automatisch die benötigten DNS-Einträge und konfiguriert d
 
 ## Sprache
 
-Das Plugin verwendet standardmäßig Englisch.
+Das Plugin unterstützt mehrere Sprachen.
 
-* Deutsche Panel-Sprache (`de`) → Deutsch
-* Jede andere Panel-Sprache → Englisch
+Wenn eine Übersetzung für die aktuelle Pelican-Sprache vorhanden ist, wird diese verwendet.
+
+Ist keine Übersetzung für die aktuelle Sprache vorhanden, wird Englisch als Fallback verwendet.
+
+### Übersetzungsbeiträge
+
+Wenn deine Sprache derzeit nicht unterstützt wird, kannst du mir gerne eine Übersetzung schicken.
+
+Nach einer Prüfung kann ich die Übersetzung offiziell in das Plugin aufnehmen.
 
 ## Lizenz
 
