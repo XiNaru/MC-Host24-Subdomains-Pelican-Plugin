@@ -5,6 +5,7 @@ namespace XiNaaru\McHost24Subdomains\Livewire\Server;
 use App\Enums\SubuserPermission;
 use App\Models\Server;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
@@ -37,6 +38,9 @@ class SubdomainManager extends Component implements HasSchemas
             ->first();
 
         $this->form->fill([
+            'domain_id' => $record?->domain_id
+                ? (string) $record->domain_id
+                : null,
             'subdomain' => $record?->subdomain,
         ]);
     }
@@ -45,15 +49,23 @@ class SubdomainManager extends Component implements HasSchemas
     {
         return $schema
             ->components([
+                Select::make('domain_id')
+                    ->label(
+                        __('mchost24-subdomains::strings.minecraft_domain')
+                    )
+                    ->options(
+                        app(McHost24DnsService::class)
+                            ->getConfiguredDomainOptions()
+                    )
+                    ->placeholder(
+                        __('mchost24-subdomains::strings.domain_required')
+                    )
+                    ->required()
+                    ->searchable(),
+
                 TextInput::make('subdomain')
                     ->label(__('mchost24-subdomains::strings.field'))
                     ->placeholder('survival')
-                    ->suffix(function (): string {
-                        return '.' . rtrim(
-                            (string) config('mchost24-subdomains.domain'),
-                            '.'
-                        );
-                    })
                     ->required()
                     ->maxLength(63)
                     ->regex('/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/')
@@ -116,7 +128,8 @@ class SubdomainManager extends Component implements HasSchemas
 
             app(McHost24DnsService::class)->create(
                 $this->server,
-                (string) $data['subdomain']
+                (string) $data['subdomain'],
+                (int) $data['domain_id']
             );
 
             Notification::make()
@@ -130,6 +143,7 @@ class SubdomainManager extends Component implements HasSchemas
                 ->send();
 
             $this->form->fill([
+                'domain_id' => null,
                 'subdomain' => '',
             ]);
         } catch (Throwable $exception) {
@@ -166,6 +180,7 @@ class SubdomainManager extends Component implements HasSchemas
                 ->send();
 
             $this->form->fill([
+                'domain_id' => null,
                 'subdomain' => '',
             ]);
         } catch (Throwable $exception) {

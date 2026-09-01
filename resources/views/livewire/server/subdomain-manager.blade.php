@@ -1,3 +1,4 @@
+```blade
 @php
     $record = $this->getCurrentRecord();
 @endphp
@@ -5,6 +6,7 @@
 <div
     id="mchost24-subdomains-container"
     x-data
+    wire:ignore.self
     style="margin: 0.25rem 1.5rem 2rem;"
 >
     <fieldset
@@ -151,3 +153,4 @@
         })();
     </script>
 </div>
+```

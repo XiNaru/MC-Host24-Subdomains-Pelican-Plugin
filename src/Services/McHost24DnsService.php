@@ -14,7 +14,9 @@ class McHost24DnsService
 
     public function getApiToken(): string
     {
-        $token = trim((string) config('mchost24-subdomains.api_token'));
+        $token = trim(
+            (string) config('mchost24-subdomains.api_token')
+        );
 
         if ($token === '') {
             throw new RuntimeException(
@@ -25,9 +27,95 @@ class McHost24DnsService
         return $token;
     }
 
+    public function getConfiguredDomains(): array
+    {
+        $domains = config('mchost24-subdomains.domains', []);
+
+        if (!is_array($domains)) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($domains as $domain) {
+            if (
+                !is_array($domain) ||
+                !isset($domain['id']) ||
+                !isset($domain['domain'])
+            ) {
+                continue;
+            }
+
+            $domainId = (int) $domain['id'];
+            $domainName = trim(
+                (string) $domain['domain']
+            );
+
+            if ($domainId <= 0 || $domainName === '') {
+                continue;
+            }
+
+            $result[] = [
+                'id' => $domainId,
+                'domain' => rtrim($domainName, '.'),
+            ];
+        }
+
+        /*
+         * Rückwärtskompatibilität mit der alten Einzel-Domain-Konfiguration.
+         */
+        if ($result === []) {
+            $legacyDomainId = (int) config(
+                'mchost24-subdomains.domain_id'
+            );
+
+            $legacyDomain = trim(
+                (string) config('mchost24-subdomains.domain')
+            );
+
+            if (
+                $legacyDomainId > 0 &&
+                $legacyDomain !== ''
+            ) {
+                $result[] = [
+                    'id' => $legacyDomainId,
+                    'domain' => rtrim($legacyDomain, '.'),
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    public function getConfiguredDomainOptions(): array
+    {
+        $options = [];
+
+        foreach ($this->getConfiguredDomains() as $domain) {
+            $options[(string) $domain['id']] = $domain['domain'];
+        }
+
+        return $options;
+    }
+
+    public function getDomain(int $domainId): array
+    {
+        foreach ($this->getConfiguredDomains() as $domain) {
+            if ((int) $domain['id'] === $domainId) {
+                return $domain;
+            }
+        }
+
+        throw new RuntimeException(
+            __('mchost24-subdomains::strings.domain_not_configured')
+        );
+    }
+
     public function getDomainId(): int
     {
-        $domainId = (int) config('mchost24-subdomains.domain_id');
+        $domainId = (int) config(
+            'mchost24-subdomains.domain_id'
+        );
 
         if ($domainId <= 0) {
             throw new RuntimeException(
@@ -38,9 +126,11 @@ class McHost24DnsService
         return $domainId;
     }
 
-    public function getDomain(): string
+    public function getDomainName(): string
     {
-        $domain = trim((string) config('mchost24-subdomains.domain'));
+        $domain = trim(
+            (string) config('mchost24-subdomains.domain')
+        );
 
         if ($domain === '') {
             throw new RuntimeException(
@@ -51,19 +141,35 @@ class McHost24DnsService
         return rtrim($domain, '.');
     }
 
-    public function create(Server $server, string $subdomain): McHost24Subdomain
-    {
+    public function create(
+        Server $server,
+        string $subdomain,
+        int $domainId
+    ): McHost24Subdomain {
         $subdomain = strtolower(trim($subdomain));
 
         $this->validateSubdomain($subdomain);
 
-        if (McHost24Subdomain::query()->where('subdomain', $subdomain)->exists()) {
+        $domainData = $this->getDomain($domainId);
+
+        $domain = $domainData['domain'];
+
+        if (
+            McHost24Subdomain::query()
+                ->where('domain_id', $domainId)
+                ->where('subdomain', $subdomain)
+                ->exists()
+        ) {
             throw new RuntimeException(
                 __('mchost24-subdomains::strings.subdomain_already_used')
             );
         }
 
-        if (McHost24Subdomain::query()->where('server_id', $server->id)->exists()) {
+        if (
+            McHost24Subdomain::query()
+                ->where('server_id', $server->id)
+                ->exists()
+        ) {
             throw new RuntimeException(
                 __('mchost24-subdomains::strings.already_exists')
             );
@@ -92,33 +198,29 @@ class McHost24DnsService
             );
         }
 
-        $domain = $this->getDomain();
-
         /*
-         * Der A/AAAA-Record verwendet einen internen Hostnamen.
-         * Dadurch bleibt der vom Benutzer gewünschte Name ausschließlich
-         * die eigentliche Minecraft-Adresse.
+         * Der interne Hostname bleibt weiterhin pro Server eindeutig.
          */
         $targetHost = 'mc-' . $server->id . '.' . $domain;
 
         $fqdn = $subdomain . '.' . $domain;
 
         $addressRecord = $this->createAddressRecord(
-            $this->getDomainId(),
+            $domainId,
             $this->buildAddressSld($server),
             $ip
         );
 
         try {
             $srvRecord = $this->createSrvRecord(
-                $this->getDomainId(),
+                $domainId,
                 $subdomain,
                 $port,
                 $targetHost
             );
         } catch (\Throwable $exception) {
             $this->deleteDnsRecord(
-                $this->getDomainId(),
+                $domainId,
                 (int) $addressRecord['id']
             );
 
@@ -127,6 +229,8 @@ class McHost24DnsService
 
         return McHost24Subdomain::create([
             'server_id' => $server->id,
+            'domain_id' => $domainId,
+            'domain' => $domain,
             'subdomain' => $subdomain,
             'fqdn' => $fqdn,
             'a_record_id' => (int) $addressRecord['id'],
@@ -139,7 +243,14 @@ class McHost24DnsService
 
     public function delete(McHost24Subdomain $record): void
     {
-        $domainId = $this->getDomainId();
+        $domainId = (int) $record->domain_id;
+
+        /*
+         * Rückwärtskompatibilität für alte Datensätze.
+         */
+        if ($domainId <= 0) {
+            $domainId = $this->getDomainId();
+        }
 
         if ($record->srv_record_id !== null) {
             $this->deleteDnsRecord(
@@ -168,14 +279,22 @@ class McHost24DnsService
         string $sld,
         string $ip
     ): array {
-        $type = str_contains($ip, ':') ? 'AAAA' : 'A';
+        $type = str_contains($ip, ':')
+            ? 'AAAA'
+            : 'A';
 
         $response = $this->request()
-            ->post(self::API_BASE_URL . '/domain/' . $domainId . '/dns', [
-                'sld' => $sld,
-                'type' => $type,
-                'target' => $ip,
-            ]);
+            ->post(
+                self::API_BASE_URL .
+                '/domain/' .
+                $domainId .
+                '/dns',
+                [
+                    'sld' => $sld,
+                    'type' => $type,
+                    'target' => $ip,
+                ]
+            );
 
         $this->ensureSuccessful(
             $response,
@@ -200,11 +319,21 @@ class McHost24DnsService
         string $targetHost
     ): array {
         $response = $this->request()
-            ->post(self::API_BASE_URL . '/domain/' . $domainId . '/dns', [
-                'sld' => '_minecraft._tcp.' . $subdomain,
-                'type' => 'SRV',
-                'target' => '10 0 ' . $port . ' ' . rtrim($targetHost, '.') . '.',
-            ]);
+            ->post(
+                self::API_BASE_URL .
+                '/domain/' .
+                $domainId .
+                '/dns',
+                [
+                    'sld' => '_minecraft._tcp.' . $subdomain,
+                    'type' => 'SRV',
+                    'target' => '10 0 ' .
+                        $port .
+                        ' ' .
+                        rtrim($targetHost, '.') .
+                        '.',
+                ]
+            );
 
         $this->ensureSuccessful(
             $response,
@@ -222,8 +351,10 @@ class McHost24DnsService
         return $data;
     }
 
-    private function deleteDnsRecord(int $domainId, int $recordId): void
-    {
+    private function deleteDnsRecord(
+        int $domainId,
+        int $recordId
+    ): void {
         $response = $this->request()
             ->delete(
                 self::API_BASE_URL .
@@ -232,6 +363,15 @@ class McHost24DnsService
                 '/dns/' .
                 $recordId
             );
+
+        /*
+         * HTTP 404 bedeutet beim Löschen, dass der DNS-Eintrag
+         * bereits nicht mehr vorhanden ist. In diesem Fall soll
+         * der lokale Plugin-Datensatz trotzdem gelöscht werden.
+         */
+        if ($response->status() === 404) {
+            return;
+        }
 
         $this->ensureSuccessful(
             $response,
@@ -258,17 +398,24 @@ class McHost24DnsService
 
         $apiMessage = $response->json('message');
 
-        if (is_string($apiMessage) && trim($apiMessage) !== '') {
+        if (
+            is_string($apiMessage) &&
+            trim($apiMessage) !== ''
+        ) {
             $message .= ' ' . trim($apiMessage);
         }
 
         throw new RuntimeException(
-            $message . ' HTTP ' . $response->status() . '.'
+            $message .
+            ' HTTP ' .
+            $response->status() .
+            '.'
         );
     }
 
-    private function validateSubdomain(string $subdomain): void
-    {
+    private function validateSubdomain(
+        string $subdomain
+    ): void {
         if ($subdomain === '') {
             throw new RuntimeException(
                 __('mchost24-subdomains::strings.subdomain_required')
@@ -281,7 +428,12 @@ class McHost24DnsService
             );
         }
 
-        if (!preg_match('/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/', $subdomain)) {
+        if (
+            !preg_match(
+                '/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/',
+                $subdomain
+            )
+        ) {
             throw new RuntimeException(
                 __('mchost24-subdomains::strings.subdomain_invalid')
             );

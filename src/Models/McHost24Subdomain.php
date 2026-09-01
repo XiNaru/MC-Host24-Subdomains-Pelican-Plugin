@@ -12,6 +12,8 @@ class McHost24Subdomain extends Model
 
     protected $fillable = [
         'server_id',
+        'domain_id',
+        'domain',
         'subdomain',
         'fqdn',
         'a_record_id',
@@ -22,6 +24,7 @@ class McHost24Subdomain extends Model
     ];
 
     protected $casts = [
+        'domain_id' => 'integer',
         'a_record_id' => 'integer',
         'srv_record_id' => 'integer',
         'target_port' => 'integer',

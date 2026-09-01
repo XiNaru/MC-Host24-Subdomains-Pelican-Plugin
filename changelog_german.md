@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.0
+
+### Hinzugefügt
+
+* Unterstützung für mehrere konfigurierbare Minecraft-Domains hinzugefügt.
+* Auswahl der gewünschten Domain beim Erstellen einer Subdomain hinzugefügt.
+* Datenbank-Migration für die neue Mehrfach-Domain-Konfiguration hinzugefügt.
+* Rückwärtskompatibilität mit der bisherigen Einzel-Domain-Konfiguration hinzugefügt.
+
+### Änderungen
+
+* Die Erstellung von Subdomains verwendet jetzt die beim Erstellen ausgewählte Minecraft-Domain.
+* DNS-Einträge speichern jetzt die zugehörige MC-HOST24 Domain-ID.
+* Das Plugin erkennt automatisch, ob für die Server-IP ein A- oder AAAA-Eintrag benötigt wird.
+* Die Integration des Subdomain-Bereichs in die Server-Einstellungen wurde verbessert.
+* Das README wurde um die neue Mehrfach-Domain-Funktionalität erweitert.
+* Die Plugin-Metadaten wurden auf Version 1.2.0 aktualisiert.
+
 ## 1.1.0
 
 ### Änderungen

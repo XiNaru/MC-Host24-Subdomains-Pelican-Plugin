@@ -30,12 +30,18 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
         $id = str($panel->getId())->title();
 
         $panel->discoverResources(
-            plugin_path($this->getId(), "src/Filament/$id/Resources"),
+            plugin_path(
+                $this->getId(),
+                "src/Filament/$id/Resources"
+            ),
             "XiNaaru\\McHost24Subdomains\\Filament\\$id\\Resources"
         );
 
         $panel->discoverPages(
-            plugin_path($this->getId(), "src/Filament/$id/Pages"),
+            plugin_path(
+                $this->getId(),
+                "src/Filament/$id/Pages"
+            ),
             "XiNaaru\\McHost24Subdomains\\Filament\\$id\\Pages"
         );
     }
@@ -46,10 +52,54 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
 
     public function getSettingsFormData(): array
     {
+        $domains = config(
+            'mchost24-subdomains.domains',
+            []
+        );
+
+        $domainIds = [];
+
+        if (is_array($domains)) {
+            foreach ($domains as $domain) {
+                if (
+                    is_array($domain) &&
+                    isset($domain['id'])
+                ) {
+                    $domainIds[] = (string) $domain['id'];
+                }
+            }
+        }
+
+        /*
+         * Rückwärtskompatibilität mit der alten Einzel-Domain.
+         */
+        if (
+            $domainIds === [] &&
+            (int) config('mchost24-subdomains.domain_id') > 0
+        ) {
+            $domainIds[] = (string) config(
+                'mchost24-subdomains.domain_id'
+            );
+        }
+
         return [
-            'api_token' => config('mchost24-subdomains.api_token', ''),
-            'domain_id' => config('mchost24-subdomains.domain_id', ''),
-            'domain' => config('mchost24-subdomains.domain', ''),
+            'api_token' => config(
+                'mchost24-subdomains.api_token',
+                ''
+            ),
+            'domain_ids' => $domainIds,
+
+            /*
+             * Alte Felder bleiben erhalten.
+             */
+            'domain_id' => config(
+                'mchost24-subdomains.domain_id',
+                ''
+            ),
+            'domain' => config(
+                'mchost24-subdomains.domain',
+                ''
+            ),
         ];
     }
 
@@ -57,7 +107,9 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
     {
         return [
             TextInput::make('api_token')
-                ->label(__('mchost24-subdomains::strings.api_token'))
+                ->label(
+                    __('mchost24-subdomains::strings.api_token')
+                )
                 ->password()
                 ->revealable()
                 ->live(debounce: 500)
@@ -82,7 +134,7 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
                     __('mchost24-subdomains::strings.tfa_help')
                 ),
 
-            Select::make('domain_id')
+            Select::make('domain_ids')
                 ->label(
                     __('mchost24-subdomains::strings.minecraft_domain')
                 )
@@ -90,7 +142,9 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
                     __('mchost24-subdomains::strings.domain_placeholder')
                 )
                 ->options(function (Get $get): array {
-                    $token = trim((string) $get('api_token'));
+                    $token = trim(
+                        (string) $get('api_token')
+                    );
 
                     if ($token === '') {
                         return [];
@@ -102,7 +156,9 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
                             ->withHeaders([
                                 'Authorization' => $token,
                             ])
-                            ->get(self::API_BASE_URL . '/domain');
+                            ->get(
+                                self::API_BASE_URL . '/domain'
+                            );
 
                         if (!$response->successful()) {
                             return [];
@@ -125,9 +181,14 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
                                 continue;
                             }
 
-                            $domainName = $domain['sld'] . '.' . $domain['tld'];
+                            $domainName =
+                                $domain['sld'] .
+                                '.' .
+                                $domain['tld'];
 
-                            $options[(string) $domain['id']] = $domainName;
+                            $options[
+                                (string) $domain['id']
+                            ] = $domainName;
                         }
 
                         return $options;
@@ -135,6 +196,7 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
                         return [];
                     }
                 })
+                ->multiple()
                 ->live()
                 ->searchable()
                 ->preload(false)
@@ -152,49 +214,111 @@ class McHost24SubdomainsPlugin implements HasPluginSettings, Plugin
 
     public function saveSettings(array $data): void
     {
-        $apiToken = trim((string) ($data['api_token'] ?? ''));
-        $domainId = (string) ($data['domain_id'] ?? '');
+        $apiToken = trim(
+            (string) ($data['api_token'] ?? '')
+        );
 
-        $domainName = '';
+        $selectedDomainIds = $data['domain_ids'] ?? [];
 
-        if ($apiToken !== '' && $domainId !== '') {
+        if (!is_array($selectedDomainIds)) {
+            $selectedDomainIds = [];
+        }
+
+        $selectedDomainIds = array_values(
+            array_unique(
+                array_map(
+                    'strval',
+                    $selectedDomainIds
+                )
+            )
+        );
+
+        $domains = [];
+
+        if (
+            $apiToken !== '' &&
+            $selectedDomainIds !== []
+        ) {
             try {
                 $response = Http::timeout(10)
                     ->acceptJson()
                     ->withHeaders([
                         'Authorization' => $apiToken,
                     ])
-                    ->get(self::API_BASE_URL . '/domain');
+                    ->get(
+                        self::API_BASE_URL . '/domain'
+                    );
 
                 if ($response->successful()) {
-                    $domains = $response->json('data');
+                    $availableDomains =
+                        $response->json('data');
 
-                    if (is_array($domains)) {
-                        foreach ($domains as $domain) {
-                            if ((string) ($domain['id'] ?? '') !== $domainId) {
+                    if (is_array($availableDomains)) {
+                        foreach ($availableDomains as $domain) {
+                            if (
+                                !isset($domain['id']) ||
+                                !isset($domain['sld']) ||
+                                !isset($domain['tld'])
+                            ) {
                                 continue;
                             }
 
+                            $domainId =
+                                (string) $domain['id'];
+
                             if (
-                                isset($domain['sld']) &&
-                                isset($domain['tld'])
+                                !in_array(
+                                    $domainId,
+                                    $selectedDomainIds,
+                                    true
+                                )
                             ) {
-                                $domainName = $domain['sld'] . '.' . $domain['tld'];
+                                continue;
                             }
 
-                            break;
+                            $domains[] = [
+                                'id' => (int) $domain['id'],
+                                'domain' =>
+                                    $domain['sld'] .
+                                    '.' .
+                                    $domain['tld'],
+                            ];
                         }
                     }
                 }
             } catch (Throwable) {
-                $domainName = '';
+                $domains = [];
             }
+        }
+
+        /*
+         * Rückwärtskompatibilität:
+         * Die erste ausgewählte Domain wird weiterhin in den alten
+         * ENV-Werten gespeichert.
+         */
+        $legacyDomainId = '';
+        $legacyDomain = '';
+
+        if ($domains !== []) {
+            $legacyDomainId = (string) $domains[0]['id'];
+            $legacyDomain = (string) $domains[0]['domain'];
         }
 
         $this->writeToEnvironment([
             'MCHOST24_SUBDOMAINS_API_TOKEN' => $apiToken,
-            'MCHOST24_SUBDOMAINS_DOMAIN_ID' => $domainId,
-            'MCHOST24_SUBDOMAINS_DOMAIN' => $domainName,
+
+            'MCHOST24_SUBDOMAINS_DOMAINS' =>
+                json_encode(
+                    $domains,
+                    JSON_UNESCAPED_SLASHES |
+                    JSON_UNESCAPED_UNICODE
+                ),
+
+            'MCHOST24_SUBDOMAINS_DOMAIN_ID' =>
+                $legacyDomainId,
+
+            'MCHOST24_SUBDOMAINS_DOMAIN' =>
+                $legacyDomain,
         ]);
 
         Notification::make()
