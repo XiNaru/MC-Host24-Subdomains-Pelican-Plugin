@@ -2,7 +2,7 @@
     "id": "mchost24-subdomains",
     "name": "MC-HOST24 Subdomains",
     "author": "XiNaaru",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Creates and manages Minecraft subdomains for Pelican servers using the MC-HOST24 API.",
     "category": "plugin",
     "namespace": "XiNaaru\\McHost24Subdomains",
