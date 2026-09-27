@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+### Fehlerbehebungen
+
+* Fehler behoben, durch den eine übrig gebliebene Markdown-Codeblock-Markierung am unteren Rand der Server-Einstellungsseite angezeigt wurde.
+
 ## 1.2.0
 
 ### Hinzugefügt
