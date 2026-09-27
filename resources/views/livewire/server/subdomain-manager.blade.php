@@ -1,4 +1,3 @@
-```blade
 @php
     $record = $this->getCurrentRecord();
 @endphp
@@ -153,4 +152,3 @@
         })();
     </script>
 </div>
-```
