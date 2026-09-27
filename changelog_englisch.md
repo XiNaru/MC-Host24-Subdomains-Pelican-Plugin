@@ -1,4 +1,9 @@
 # Changelog
+## 1.2.1
+
+### Fixes
+
+* Fixed stray Markdown code fence being rendered at the bottom of the server settings page.
 
 ## 1.2.0
 
